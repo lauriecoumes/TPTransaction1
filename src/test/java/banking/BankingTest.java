@@ -40,7 +40,6 @@ public class BankingTest {
 		myDAO = null; // Pas vraiment utile
 	}
 
-	
 	@Test
 	public void findExistingCustomer() throws SQLException {
 		float balance = myDAO.balanceForCustomer(0);
@@ -63,7 +62,52 @@ public class BankingTest {
 		assertEquals("Balance incorrecte !", before0 - amount, myDAO.balanceForCustomer(fromCustomer), 0.001f);
 		assertEquals("Balance incorrecte !", before1 + amount, myDAO.balanceForCustomer(toCustomer), 0.001f);				
 	}
-	
+
+	@Test
+	public void negativeAccount() throws Exception {
+		float amount = 51.0f;
+		int idCustomer0 = 0;
+		int idCustomer1 = 1;
+
+		float before0 = myDAO.balanceForCustomer(idCustomer0);
+		float before1 = myDAO.balanceForCustomer(idCustomer1);
+
+		try {
+			myDAO.bankTransferTransaction(idCustomer1, idCustomer0, amount);
+			fail("Compte à découvert");
+		} catch (Exception ignored) {}
+		assertEquals(before0, myDAO.balanceForCustomer(idCustomer0), 0.001f);
+		assertEquals(before1, myDAO.balanceForCustomer(idCustomer1), 0.001f);
+	}
+
+	@Test
+	public void unknownDebitor() throws Exception {
+		float amount = 10.0f;
+		int idDebitor = 2;
+		int idCreditor = 1;
+
+		float before = myDAO.balanceForCustomer(idCreditor);
+
+		try {
+			myDAO.bankTransferTransaction(idDebitor, idCreditor, amount);
+			fail("Débiteur incconu");
+		} catch (Exception ignored) {}
+		assertEquals(before, myDAO.balanceForCustomer(idCreditor), 0.001f);
+	}
+
+	@Test
+	public void unknownCreditor() throws Exception {
+		float amount = 20.0f;
+		int idDebitor = 0;
+		int idCreditor = 2;
+
+		float before = myDAO.balanceForCustomer(idDebitor);
+		try {
+			myDAO.bankTransferTransaction(idDebitor, idCreditor, amount);
+			fail("Créditeur incconu");
+		} catch (Exception ignored) {}
+		assertEquals(before, myDAO.balanceForCustomer(idDebitor), 0.001f);
+	}
 
 	public static DataSource getDataSource() throws SQLException {
 		org.hsqldb.jdbc.JDBCDataSource ds = new org.hsqldb.jdbc.JDBCDataSource();
